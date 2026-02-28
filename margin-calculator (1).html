@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제품 마진 계산기</title>
+<style>
+  :root {
+    --cream: #FAF6F0;
+    --beige: #F0E8DC;
+    --warm-tan: #D9C8B0;
+    --brown: #8B6F52;
+    --dark-brown: #4A3728;
+    --sage: #8A9E7A;
+    --rust: #C4714A;
+    --text: #3D2B1F;
+    --text-light: #8B7B6E;
+    --white: #FFFDF9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, 'Malgun Gothic', sans-serif;
+    background-color: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px 80px;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(217,200,176,0.4) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(138,158,122,0.15) 0%, transparent 50%);
+  }
+
+  header { text-align: center; margin-bottom: 36px; }
+
+  .header-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown);
+    background: var(--beige);
+    border: 1px solid var(--warm-tan);
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  h1 { font-size: 32px; color: var(--dark-brown); line-height: 1.3; margin-bottom: 8px; font-weight: 700; }
+  h1 em { font-style: italic; color: var(--brown); }
+  .subtitle { font-size: 13px; color: var(--text-light); }
+
+  .card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 24px 20px;
+    margin-bottom: 14px;
+    width: 100%;
+    max-width: 480px;
+    border: 1px solid rgba(217,200,176,0.6);
+    box-shadow: 0 4px 20px rgba(74,55,40,0.06);
+  }
+
+  .card-title {
+    font-size: 13px; font-weight: 600; color: var(--brown);
+    letter-spacing: 1px; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .card-title::before {
+    content: ''; width: 4px; height: 14px;
+    background: var(--warm-tan); border-radius: 2px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label { display: block; font-size: 12px; color: var(--text-light); margin-bottom: 6px; }
+
+  .input-wrap { position: relative; }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 11px 40px 11px 13px;
+    border: 1.5px solid var(--beige);
+    border-radius: 10px;
+    background: var(--cream);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  input[type="text"] { padding-right: 13px; }
+  input:focus { border-color: var(--warm-tan); background: var(--white); }
+
+  .unit {
+    position: absolute; right: 13px; top: 50%;
+    transform: translateY(-50%); font-size: 12px;
+    color: var(--text-light); pointer-events: none;
+  }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .toggle-wrap { display: flex; gap: 6px; margin-bottom: 14px; }
+
+  .toggle-btn {
+    flex: 1; padding: 9px 6px;
+    border: 1.5px solid var(--beige); border-radius: 10px;
+    background: var(--cream); color: var(--text-light);
+    font-family: inherit; font-size: 12px; cursor: pointer;
+    transition: all 0.2s; text-align: center;
+  }
+
+  .toggle-btn.active {
+    border-color: var(--brown); background: var(--beige);
+    color: var(--dark-brown); font-weight: 600;
+  }
+
+  .material-panel { display: none; }
+  .material-panel.active { display: block; }
+
+  .material-item {
+    background: var(--cream); border: 1.5px solid var(--beige);
+    border-radius: 12px; padding: 14px; margin-bottom: 10px;
+  }
+
+  .mat-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 10px;
+  }
+
+  .mat-cost { font-size: 14px; color: var(--sage); font-weight: 600; }
+
+  .mat-name {
+    border: none !important; background: none !important;
+    font-size: 13px !important; font-weight: 600 !important;
+    color: var(--brown) !important; padding: 0 !important; width: 55%;
+  }
+
+  .mat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .mini-label { font-size: 11px; color: var(--text-light); margin-bottom: 4px; }
+  .mat-grid input { font-size: 14px !important; }
+  .mat-desc { font-size: 11px; color: var(--sage); margin-top: 8px; min-height: 16px; }
+
+  .split-total {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--beige); border-radius: 10px;
+    padding: 12px 14px; margin-top: 12px; font-size: 13px; color: var(--brown);
+  }
+
+  .split-total strong { font-size: 15px; color: var(--dark-brown); }
+
+  .extra-row {
+    display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 8px; align-items: center; margin-bottom: 8px;
+  }
+
+  .add-btn {
+    background: none; border: 1.5px dashed var(--warm-tan);
+    color: var(--brown); font-size: 12px; font-family: inherit;
+    padding: 9px 14px; border-radius: 9px; cursor: pointer;
+    transition: all 0.2s; margin-top: 4px; display: inline-block;
+  }
+
+  .add-btn:hover { background: var(--beige); border-style: solid; }
+
+  .remove-btn {
+    background: rgba(196,113,74,0.1); border: 1px solid rgba(196,113,74,0.25); color: var(--rust);
+    font-size: 16px; cursor: pointer; line-height: 1;
+    transition: all 0.2s; padding: 3px 8px; border-radius: 6px;
+    font-weight: 600;
+  }
+
+  .remove-btn:hover { background: rgba(196,113,74,0.2); }
+
+  .calc-btn {
+    width: 100%; max-width: 480px; padding: 16px;
+    background: var(--dark-brown); color: var(--cream);
+    border: none; border-radius: 14px; font-family: inherit;
+    font-size: 16px; font-weight: 600; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.25s; margin-bottom: 14px;
+  }
+
+  .calc-btn:hover {
+    background: var(--brown); transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(74,55,40,0.2);
+  }
+
+  .result-card {
+    background: var(--dark-brown); border-radius: 20px;
+    padding: 26px 20px; width: 100%; max-width: 480px;
+    color: var(--cream); display: none;
+  }
+
+  .result-card.show { display: block; }
+
+  .result-title { font-size: 16px; font-weight: 700; color: var(--warm-tan); margin-bottom: 20px; }
+
+  .highlight {
+    background: rgba(217,200,176,0.1); border-radius: 12px;
+    padding: 18px; text-align: center;
+  }
+
+  .big-num { font-size: 46px; font-weight: 700; color: var(--white); line-height: 1; margin-bottom: 4px; }
+  .big-label { font-size: 11px; color: var(--warm-tan); letter-spacing: 2px; text-transform: uppercase; }
+
+  .bar-wrap {
+    margin-top: 14px; background: rgba(255,255,255,0.1);
+    border-radius: 8px; height: 8px; overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%; border-radius: 8px;
+    background: linear-gradient(90deg, var(--sage), var(--warm-tan));
+    width: 0%; transition: width 1s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .r-comment { font-size: 12px; color: var(--warm-tan); opacity: 0.85; margin-top: 10px; }
+
+  .result-rows { margin-top: 18px; }
+
+  .result-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 11px 0; border-bottom: 1px solid rgba(217,200,176,0.12); font-size: 14px;
+  }
+
+  .result-row:last-child { border-bottom: none; }
+  .rl { color: var(--warm-tan); opacity: 0.8; }
+  .rv { font-weight: 500; }
+  .rv.profit { color: var(--sage); font-size: 16px; font-weight: 700; }
+
+  .reset-btn {
+    width: 100%; padding: 12px; background: none;
+    border: 1px solid rgba(217,200,176,0.25); color: var(--warm-tan);
+    border-radius: 10px; font-family: inherit; font-size: 13px;
+    cursor: pointer; margin-top: 16px; transition: all 0.2s;
+  }
+
+  .reset-btn:hover { background: rgba(217,200,176,0.1); }
+
+  footer { margin-top: 36px; font-size: 11px; color: var(--text-light); opacity: 0.5; }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">MARGIN CALCULATOR</div>
+  <h1>제품 마진<br><em>계산기</em></h1>
+  <p class="subtitle">원가부터 순이익까지, 한눈에 확인하세요</p>
+</header>
+
+<div class="card">
+  <div class="card-title">기본 정보</div>
+  <div class="field">
+    <label>판매 가격</label>
+    <div class="input-wrap">
+      <input type="number" id="price" placeholder="0" min="0">
+      <span class="unit">원</span>
+    </div>
+  </div>
+  <div class="field">
+    <label>재료비 입력 방식</label>
+    <div class="toggle-wrap">
+      <button class="toggle-btn active" id="btn-simple" onclick="switchMode('simple')">직접 입력</button>
+      <button class="toggle-btn" id="btn-split" onclick="switchMode('split')">재료 쪼개기 계산</button>
+    </div>
+    <div class="material-panel active" id="panel-simple">
+      <div class="input-wrap">
+        <input type="number" id="material" placeholder="0" min="0">
+        <span class="unit">원</span>
+      </div>
+    </div>
+    <div class="material-panel" id="panel-split">
+      <div id="matList"></div>
+      <button class="add-btn" onclick="addMaterial()">+ 재료 추가</button>
+      <div class="split-total" id="splitTotal" style="display:none">
+        <span>재료비 합계</span>
+        <strong id="splitTotalVal">0원</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">제조 비용</div>
+  <div class="row-2">
+    <div class="field">
+      <label>포장비</label>
+      <div class="input-wrap">
+        <input type="number" id="packaging" placeholder="0" min="0">
+        <span class="unit">원</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>배송비</label>
+      <div class="input-wrap">
+        <input type="number" id="shipping" placeholder="0" min="0">
+        <span class="unit">원</span>
+      </div>
+    </div>
+  </div>
+  <div class="field">
+    <label>플랫폼 수수료</label>
+    <div class="input-wrap">
+      <input type="number" id="fee" placeholder="0" min="0" max="100">
+      <span class="unit">%</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">기타 비용 (선택)</div>
+  <div id="extraList"></div>
+  <button class="add-btn" onclick="addExtra()">+ 비용 항목 추가</button>
+</div>
+
+<button class="calc-btn" onclick="calculate()">✦ 마진 계산하기</button>
+
+<div class="result-card" id="resultCard">
+  <div class="result-title">계산 결과</div>
+  <div class="highlight">
+    <div class="big-num" id="r-rate">0%</div>
+    <div class="big-label">마진율</div>
+    <div class="bar-wrap"><div class="bar-fill" id="barFill"></div></div>
+    <div class="r-comment" id="r-comment"></div>
+  </div>
+  <div class="result-rows">
+    <div class="result-row">
+      <span class="rl">판매 가격</span><span class="rv" id="r-price">-</span>
+    </div>
+    <div class="result-row">
+      <span class="rl">재료비</span><span class="rv" id="r-material">-</span>
+    </div>
+    <div class="result-row">
+      <span class="rl">제조 비용 (포장+배송)</span><span class="rv" id="r-mfg">-</span>
+    </div>
+    <div class="result-row">
+      <span class="rl">플랫폼 수수료</span><span class="rv" id="r-fee">-</span>
+    </div>
+    <div class="result-row" id="r-extra-row" style="display:none">
+      <span class="rl">기타 비용</span><span class="rv" id="r-extra">-</span>
+    </div>
+    <div class="result-row">
+      <span class="rl" style="color:var(--cream);font-weight:600">순이익</span>
+      <span class="rv profit" id="r-profit">-</span>
+    </div>
+  </div>
+  <button class="reset-btn" onclick="resetAll()">다시 계산하기</button>
+</div>
+
+<footer>숫자를 입력하고 계산 버튼을 눌러주세요 ✦</footer>
+
+<script>
+var matCount = 0;
+var extraCount = 0;
+var mode = 'simple';
+
+function switchMode(m) {
+  mode = m;
+  document.getElementById('panel-simple').classList.toggle('active', m === 'simple');
+  document.getElementById('panel-split').classList.toggle('active', m === 'split');
+  document.getElementById('btn-simple').classList.toggle('active', m === 'simple');
+  document.getElementById('btn-split').classList.toggle('active', m === 'split');
+  if (m === 'split' && document.getElementById('matList').children.length === 0) {
+    addMaterial();
+  }
+}
+
+function addMaterial() {
+  var id = matCount++;
+  var div = document.createElement('div');
+  div.className = 'material-item';
+  div.id = 'mat-' + id;
+  div.innerHTML = '<div class="mat-header">'
+    + '<input type="text" class="mat-name" placeholder="재료명 (예: 원단)" id="mn-' + id + '" style="border:none;background:none;font-size:13px;font-weight:600;color:var(--brown);padding:0;width:55%;outline:none">'
+    + '<div style="display:flex;align-items:center;gap:8px">'
+    + '<span class="mat-cost" id="mc-' + id + '">0원</span>'
+    + '<button class="remove-btn" onclick="removeMat(' + id + ')">×</button>'
+    + '</div></div>'
+    + '<div class="mat-grid">'
+    + '<div><div class="mini-label">총 구매가</div><div class="input-wrap"><input type="number" placeholder="20000" id="mt-' + id + '" oninput="calcMat(' + id + ')" style="font-size:14px;padding-right:28px"><span class="unit" style="font-size:11px">원</span></div></div>'
+    + '<div><div class="mini-label">사용량</div><div class="input-wrap"><input type="number" placeholder="1" id="mu-' + id + '" oninput="calcMat(' + id + ')" style="font-size:14px;padding-right:28px" min="0.01" step="0.01"><span class="unit" style="font-size:11px">개</span></div></div>'
+    + '<div><div class="mini-label">전체 수량</div><div class="input-wrap"><input type="number" placeholder="5" id="mq-' + id + '" oninput="calcMat(' + id + ')" style="font-size:14px;padding-right:28px" min="1"><span class="unit" style="font-size:11px">개</span></div></div>'
+    + '</div>'
+    + '<div class="mat-desc" id="md-' + id + '">구매가, 사용량, 전체 수량을 입력하세요</div>';
+  document.getElementById('matList').appendChild(div);
+}
+
+function calcMat(id) {
+  var t = parseFloat(document.getElementById('mt-' + id).value) || 0;
+  var u = parseFloat(document.getElementById('mu-' + id).value) || 1;
+  var q = parseFloat(document.getElementById('mq-' + id).value) || 1;
+  var cost = Math.round(t * u / q);
+  document.getElementById('mc-' + id).textContent = cost.toLocaleString('ko-KR') + '원';
+  var name = document.getElementById('mn-' + id).value || '재료';
+  document.getElementById('md-' + id).textContent = t > 0
+    ? name + ' ' + t.toLocaleString() + '원 → ' + q + '개 중 ' + u + '개 사용 = ' + cost.toLocaleString() + '원'
+    : '구매가, 사용량, 전체 수량을 입력하세요';
+  updateSplitTotal();
+}
+
+function removeMat(id) {
+  var el = document.getElementById('mat-' + id);
+  if (el) { el.remove(); updateSplitTotal(); }
+}
+
+function updateSplitTotal() {
+  var total = 0;
+  document.querySelectorAll('[id^="mt-"]').forEach(function(el) {
+    var id = el.id.replace('mt-', '');
+    var t = parseFloat(el.value) || 0;
+    var u = parseFloat(document.getElementById('mu-' + id).value) || 1;
+    var q = parseFloat(document.getElementById('mq-' + id).value) || 1;
+    total += t * u / q;
+  });
+  total = Math.round(total);
+  document.getElementById('splitTotal').style.display = total > 0 ? 'flex' : 'none';
+  document.getElementById('splitTotalVal').textContent = total.toLocaleString('ko-KR') + '원';
+}
+
+function getMaterialCost() {
+  if (mode === 'simple') return parseFloat(document.getElementById('material').value) || 0;
+  var total = 0;
+  document.querySelectorAll('[id^="mt-"]').forEach(function(el) {
+    var id = el.id.replace('mt-', '');
+    var t = parseFloat(el.value) || 0;
+    var u = parseFloat(document.getElementById('mu-' + id).value) || 1;
+    var q = parseFloat(document.getElementById('mq-' + id).value) || 1;
+    total += t * u / q;
+  });
+  return Math.round(total);
+}
+
+function addExtra() {
+  var id = extraCount++;
+  var div = document.createElement('div');
+  div.className = 'extra-row';
+  div.id = 'ex-' + id;
+  div.innerHTML = '<input type="text" placeholder="항목명" id="en-' + id + '">'
+    + '<div class="input-wrap"><input type="number" placeholder="0" id="ev-' + id + '" style="padding-right:30px"><span class="unit">원</span></div>'
+    + '<button class="remove-btn" onclick="removeExtra(' + id + ')">×</button>';
+  document.getElementById('extraList').appendChild(div);
+}
+
+function removeExtra(id) {
+  var el = document.getElementById('ex-' + id);
+  if (el) el.remove();
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('ko-KR') + '원'; }
+
+function calculate() {
+  var price = parseFloat(document.getElementById('price').value) || 0;
+  if (price <= 0) { alert('판매 가격을 입력해주세요!'); return; }
+
+  var material = getMaterialCost();
+  var packaging = parseFloat(document.getElementById('packaging').value) || 0;
+  var shipping = parseFloat(document.getElementById('shipping').value) || 0;
+  var feeRate = parseFloat(document.getElementById('fee').value) || 0;
+  var feeAmt = price * feeRate / 100;
+
+  var extraTotal = 0;
+  document.querySelectorAll('[id^="ev-"]').forEach(function(el) { extraTotal += parseFloat(el.value) || 0; });
+
+  var mfg = packaging + shipping;
+  var totalCost = material + mfg + feeAmt + extraTotal;
+  var profit = price - totalCost;
+  var rate = (profit / price) * 100;
+
+  document.getElementById('r-rate').textContent = rate.toFixed(1) + '%';
+  document.getElementById('r-price').textContent = fmt(price);
+  document.getElementById('r-material').textContent = fmt(material);
+  document.getElementById('r-mfg').textContent = fmt(mfg);
+  document.getElementById('r-fee').textContent = fmt(feeAmt) + ' (' + feeRate + '%)';
+  document.getElementById('r-profit').textContent = fmt(profit);
+
+  if (extraTotal > 0) {
+    document.getElementById('r-extra-row').style.display = 'flex';
+    document.getElementById('r-extra').textContent = fmt(extraTotal);
+  }
+
+  var comment = '';
+  if (rate < 0) comment = '💸 손해가 나고 있어요. 가격을 높이거나 비용을 줄여보세요.';
+  else if (rate < 20) comment = '📌 마진이 낮은 편이에요. 비용 구조를 살펴보세요.';
+  else if (rate < 40) comment = '✨ 적정 마진이에요. 잘 하고 있어요!';
+  else if (rate < 60) comment = '🌿 마진이 좋은 편이에요!';
+  else comment = '🎉 매우 높은 마진이에요!';
+  document.getElementById('r-comment').textContent = comment;
+
+  var card = document.getElementById('resultCard');
+  card.classList.add('show');
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  setTimeout(function() {
+    document.getElementById('barFill').style.width = Math.max(0, Math.min(rate, 100)) + '%';
+  }, 100);
+}
+
+function resetAll() {
+  ['price','material','packaging','shipping','fee'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('matList').innerHTML = '';
+  document.getElementById('extraList').innerHTML = '';
+  document.getElementById('splitTotal').style.display = 'none';
+  document.getElementById('r-extra-row').style.display = 'none';
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('barFill').style.width = '0%';
+  switchMode('simple');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
